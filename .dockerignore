@@ -1,0 +1,35 @@
+# Git 目录
+.git
+**/.git
+**/.github
+
+# Python 缓存
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# 输出/临时文件
+outputs_demo/
+voice_clones/
+*.wav
+*.mp3
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# 文档（非必要）
+docs/
+*.md
+!API.md
+
+# 本地环境
+.env
+.venv
+venv/
