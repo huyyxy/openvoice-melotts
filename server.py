@@ -89,6 +89,31 @@ LANG_SE_MAP = {
 }
 
 
+# ---------------------------------------------------------------------------
+# 自定义拼音词典加载
+# ---------------------------------------------------------------------------
+def _load_custom_pinyin(dict_path: str):
+    """从 JSON 文件加载自定义拼音词典，注入 pypinyin 以修正多音字/发音错误。"""
+    from pypinyin import load_phrases_dict
+
+    if not os.path.isfile(dict_path):
+        logger.warning("自定义拼音词典文件不存在，跳过: %s", dict_path)
+        return
+
+    try:
+        with open(dict_path, "r", encoding="utf-8") as f:
+            custom_phrases = json.load(f)
+        if not isinstance(custom_phrases, dict):
+            logger.error("自定义拼音词典格式错误，应为 JSON 对象: %s", dict_path)
+            return
+        load_phrases_dict(custom_phrases)
+        logger.info("已加载自定义拼音词典: %s (%d 条)", dict_path, len(custom_phrases))
+    except json.JSONDecodeError as e:
+        logger.error("自定义拼音词典 JSON 解析失败: %s - %s", dict_path, e)
+    except Exception as e:
+        logger.error("加载自定义拼音词典失败: %s - %s", dict_path, e)
+
+
 # ============================================================================
 # TTSEngine：封装 MeloTTS + OpenVoice
 # ============================================================================
@@ -737,6 +762,12 @@ def main():
         help="声音克隆数据持久化目录 (默认: 环境变量 VOICE_CLONE_DIR 或 ./voice_clones)",
     )
     parser.add_argument(
+        "--custom-pinyin",
+        type=str,
+        default=None,
+        help="自定义拼音词典 JSON 文件路径 (默认: 环境变量 CUSTOM_PINYIN_DICT 或 ./custom_pinyin.json)",
+    )
+    parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default="INFO",
@@ -770,6 +801,15 @@ def main():
         "VOICE_CLONE_DIR",
         str(ROOT_DIR / "voice_clones"),
     )
+
+    # ---------------------------------------------------------------
+    # 加载自定义拼音词典（必须在 TTSEngine 初始化之前）
+    # ---------------------------------------------------------------
+    custom_pinyin_path = args.custom_pinyin or os.environ.get(
+        "CUSTOM_PINYIN_DICT",
+        str(ROOT_DIR / "custom_pinyin.json"),
+    )
+    _load_custom_pinyin(custom_pinyin_path)
 
     # ---------------------------------------------------------------
     # 初始化引擎
